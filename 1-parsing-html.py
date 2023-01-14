@@ -1,3 +1,4 @@
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 
@@ -9,9 +10,9 @@ def open_file():
     return soup
 
 
-def parse_title(html):
-    title = html.find("h1", attrs={"id": "main_center_0_lblLotPrimaryTitle"})
-    return title.text.strip() if title else None
+def parse_artist(html):
+    artist = html.find("h1", attrs={"id": "main_center_0_lblLotPrimaryTitle"})
+    return clear_artist_name(artist.text.strip()) if artist else None
 
 
 def parse_painting_name(html):
@@ -25,28 +26,37 @@ def parse_gbp_price(html):
     gbp_price = html.find(
         "span", attrs={"id": "main_center_0_lblPriceRealizedPrimary"}
     )
-    return gbp_price.text.strip() if gbp_price else None
+    return clear_currency(gbp_price.text).strip() if gbp_price else None
 
 
 def parse_usd_price(html):
     usd_price = html.find(
         "div", attrs={"id": "main_center_0_lblPriceRealizedSecondary"}
     )
-    return usd_price.text.strip() if usd_price else None
+    return clear_currency(usd_price.text).strip() if usd_price else None
 
 
 def parse_gbp_estimate(html):
     gbp_estimate = html.find(
         "span", attrs={"id": "main_center_0_lblPriceEstimatedPrimary"}
     )
-    return gbp_estimate.text.strip() if gbp_estimate else None
+
+    return (
+        format_estimates(clear_currency(gbp_estimate.text).strip().lstrip())
+        if gbp_estimate
+        else None
+    )
 
 
 def parse_usd_estimate(html):
     usd_estimate = html.find(
         "span", attrs={"id": "main_center_0_lblPriceEstimatedSecondary"}
     )
-    return usd_estimate.text.strip() if usd_estimate else None
+    return (
+        format_estimates(clear_currency(usd_estimate.text).strip().lstrip())
+        if usd_estimate
+        else None
+    )
 
 
 def parse_image_url(html):
@@ -56,13 +66,37 @@ def parse_image_url(html):
 
 def parse_saledate(html):
     saledate = html.find("span", attrs={"id": "main_center_0_lblSaleDate"})
-    return saledate.text.strip() if saledate else None
+    return (
+        format_date(saledate.text.strip().replace(",", ""))
+        if saledate
+        else None
+    )
+
+
+def clear_artist_name(value):
+    return value.split("(")[0].strip()
+
+
+def clear_currency(value):
+    for c in ["GBP", "USD"]:
+        value = value.replace(c, "")
+    return value.replace(",", " ")
+
+
+def format_estimates(value):
+    value = value.replace("(", "").replace(")", "")
+    return " , ".join(v.strip().lstrip() for v in value.split("-"))
+
+
+def format_date(value):
+    value = datetime.strptime(value, "%d %B %Y").strftime("%Y-%m-%d")
+    return value
 
 
 if __name__ == "__main__":
     content = open_file()
     output = {}
-    output["title"] = parse_title(content)
+    output["artist"] = parse_artist(content)
     output["painting_name"] = parse_painting_name(content)
     output["gbp_price"] = parse_gbp_price(content)
     output["usd_price"] = parse_usd_price(content)
