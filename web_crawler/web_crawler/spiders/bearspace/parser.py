@@ -1,18 +1,10 @@
-import requests
 import json
 import math
-import pandas as pd
 from bs4 import BeautifulSoup
 
 
-def request(page=1):
-    url = f"https://www.bearspace.co.uk/purchase?page={page}"
-    r = requests.get(url)
-    soup = BeautifulSoup(r.content, "lxml")
-    return soup
-
-
-def parse_ul(html):
+def parse_ul(response):
+    html = BeautifulSoup(response.text, "lxml")
     obj = html.find("script", attrs={"id": "wix-warmup-data"})
     return json.loads(obj.text)
 
@@ -40,7 +32,7 @@ def get_total_pages(total, size):
     return math.ceil(total / size)
 
 
-def parse_product(product_list, outputs=[]):
+def parse_product(product_list):
     product_url = "https://www.bearspace.co.uk/product-page/"
     for product in product_list:
         output = {}
@@ -50,25 +42,4 @@ def parse_product(product_list, outputs=[]):
         output["width_cm"] = product.get("media", [{}])[0].get("width")
         output["media"] = product.get("media", [{}])[0].get("mediaType")
         output["url"] = product_url + product.get("urlPart")
-        outputs.append(output)
-
-    return outputs
-
-
-if __name__ == "__main__":
-    offset = 20
-
-    html = request()
-    json_data = parse_ul(html)
-    products_metadata = get_products_metadata(json_data, offset)
-    total_products = get_total_products(products_metadata)
-    pages = get_total_pages(total_products, offset)
-
-    html = request(pages)
-    json_data = parse_ul(html)
-    products_metadata = get_products_metadata(json_data, offset * pages)
-    products_list = get_products_list(products_metadata)
-    outputs = parse_product(products_list)
-
-    df = pd.DataFrame(outputs)
-    print(df)
+        yield output

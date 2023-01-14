@@ -24,3 +24,15 @@ python 2-regex.py
 python 3-web-cawler.py
 python 4-data.py
 ```
+
+#### 4. scrapy spider
+
+```
+cd web_crawler
+scrapy crawl bearspace -O products.json
+```
+
+#### todo/improvements
+
+- define scrapy/requests item class
+- improve pandas/numpy knowledge
